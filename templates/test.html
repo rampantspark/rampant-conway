@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conway's Game of Life with Age</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="lifeCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("lifeCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Set canvas dimensions to match the window's inner dimensions
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const cellSize = 10;
+    const rows = Math.floor(canvas.height / cellSize);
+    const cols = Math.floor(canvas.width / cellSize);
+
+    // Initialize the 2D array to represent the grid
+    let grid = new Array(rows)
+      .fill(0)
+      .map(() => new Array(cols).fill({age: 0, state: 0}));
+
+    // Function to initialize the grid with a random initial state
+    function initializeGrid() {
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          grid[i][j] = {age: 0, state: Math.random() > 0.7 ? 1 : 0};
+        }
+      }
+    }
+
+    // Function to draw the current state of the grid
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const cell = grid[i][j];
+          const color = ageToColor(cell.age);
+
+          if (cell.state === 1) {
+            ctx.fillStyle = color;
+            ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    }
+
+    // Function to map age to color
+    function ageToColor(age) {
+      const colors = [
+        "#FF0000",
+        "#FFA500",
+        "#FFFF00",
+        "#00FF00",
+        "#0000FF",
+        "#4B0082",
+        "#8B00FF",
+      ];
+      const maxAge = colors.length - 1;
+
+      // Clamp age to the range [0, maxAge]
+      const clampedAge = Math.min(Math.max(age, 0), maxAge);
+
+      return colors[clampedAge];
+    }
+
+    // Function to evolve the grid to the next generation based on Game of Life rules
+    function evolveGrid() {
+      const nextGeneration = new Array(rows)
+        .fill(0)
+        .map(() => new Array(cols).fill({age: 0, state: 0}));
+
+      for (let i = 1; i < rows - 1; i++) {
+        for (let j = 1; j < cols - 1; j++) {
+          const neighborsSum =
+            grid[i - 1][j - 1].state +
+            grid[i - 1][j].state +
+            grid[i - 1][j + 1].state +
+            grid[i][j - 1].state +
+            grid[i][j + 1].state +
+            grid[i + 1][j - 1].state +
+            grid[i + 1][j].state +
+            grid[i + 1][j + 1].state;
+
+          // Apply Game of Life rules
+          const currentCell = grid[i][j];
+          const newCell = {
+            age: currentCell.state === 0 ? 0 : currentCell.age + 1,
+            state: 0,
+          };
+
+          if (currentCell.state === 1) {
+            newCell.state = neighborsSum === 2 || neighborsSum === 3 ? 1 : 0;
+          } else {
+            newCell.state = neighborsSum === 3 ? 1 : 0;
+          }
+
+          nextGeneration[i][j] = newCell;
+        }
+      }
+
+      grid = nextGeneration;
+    }
+
+    // Function to run the animation with a timeout for slower speed
+    function animate() {
+      drawGrid();
+      evolveGrid();
+      setTimeout(animate, 100); // Adjust the timeout value for speed control
+    }
+
+    // Initialize the grid and start the animation
+    initializeGrid();
+    animate();
+
+    // Handle window resize to update canvas dimensions
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initializeGrid();
+    });
+  </script>
+</body>
+
+</html>
